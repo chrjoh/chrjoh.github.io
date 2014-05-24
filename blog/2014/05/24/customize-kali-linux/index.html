@@ -1,0 +1,194 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Customize kali linux - Lodakai's corner</title>
+	<meta name="author" content="Christer Johansson">
+
+	
+	<meta name="description" content="A quick guide to setup kali linux with some extras. As I just got myself a ultrabook and wanted a linux
+distribution to experiment with security &hellip;">
+	
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="Lodakai's corner" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/favicon.png" rel="shortcut icon">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	<script async="true" src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+	
+</head>
+
+
+<body>
+	<header id="header" class="inner"><h1><a href="/">Lodakai's corner</a></h1>
+<nav id="main-nav"><ul class="main">
+	<li><a href="/">Blog</a></li>
+	<li><a href="/blog/archives">Archives</a></li>
+</ul>
+</nav>
+<nav id="mobile-nav">
+	<div class="alignleft menu">
+		<a class="button">Menu</a>
+		<div class="container"><ul class="main">
+	<li><a href="/">Blog</a></li>
+	<li><a href="/blog/archives">Archives</a></li>
+</ul>
+</div>
+	</div>
+	<div class="alignright search">
+		<a class="button"></a>
+		<div class="container">
+			<form action="https://www.google.com/search" method="get">
+				<input type="text" name="q" results="0">
+				<input type="hidden" name="q" value="site:chrjoh.github.io">
+			</form>
+		</div>
+	</div>
+</nav>
+<nav id="sub-nav" class="alignright">
+	<div class="social">
+		
+		
+		
+		<a class="twitter" href="http://twitter.com/lodakai" title="Twitter">Twitter</a>
+		
+		
+		<a class="github" href="https://github.com/chrjoh" title="GitHub">GitHub</a>
+		
+    
+		
+		
+		
+		
+		
+		<a class="rss" href="/atom.xml" title="RSS">RSS</a>
+		
+    
+	</div>
+	<form class="search" action="https://www.google.com/search" method="get">
+		<input class="alignright" type="text" name="q" results="0">
+		<input type="hidden" name="q" value="site:chrjoh.github.io">
+	</form>
+</nav>
+
+</header>
+	
+		
+	
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">Customize Kali Linux</h2>
+	<div class="entry-content"><h3>A quick guide to setup kali linux with some extras.</h3>
+
+<p>As I just got myself a ultrabook and wanted a linux
+distribution to experiment with security setups and some development.
+The installation is a normal <a href="http://www.kali.org/downloads/">kali linux</a>
+ with customized tmux, ruby on rails develop envoronment.</p>
+
+<p>Item that need to be instaled are:</p>
+
+<ul>
+<li>sublime (text editor)</li>
+<li>Redis (fast key, value database)</li>
+<li>nodejs (javascript runtime)</li>
+</ul>
+
+
+<h4>tmux</h4>
+
+<p>change default b to a for easier keybinding, the tmux.conf can be found here
+<a href="https://github.com/chrjoh/dotfiles/blob/master/kali_tmux.conf">tmux.conf</a></p>
+
+<h4>git</h4>
+
+<p>So we can have version controll, follow the instructions on github
+<a href="https://help.github.com/articles/generating-ssh-keys">ssh key setup</a></p>
+
+<h4>Sublime</h4>
+
+<p>Download sublime2 <a href="http://www.sublimetext.com/2">here</a> or sublime2 <a href="http://www.sublimetext.com/3">here</a>
+I choose sublime2, then extract the package with :
+<code>tar xf Sublime\ Text\ 2.0.1\ x64.tar.bz2</code></p>
+
+<p>You’ll get a “Sublime Text 2″ folder after extraction. This folder contains all the files that Sublime Text will need. Then I moved it to “/opt/” folder :
+<code>mv Sublime\ Text\ 2 /opt/</code></p>
+
+<p>To be able to use it from a terminal with “sublime”. For that just create a symbolic link in “/usr/bin” :
+<code>ln -s /opt/Sublime\ Text\ 2/sublime_text /usr/bin/sublime</code></p>
+
+<h4>Redis</h4>
+
+<p>Just download the 64-bit verion
+<a href="http://download.redis.io/redis-stable.tar.gz">here</a> with
+<code>wget http://download.redis.io/redis-stable.tar.gz</code> there is also a online guide
+<a href="http://redis.io/topics/quickstart">here</a> to unpack use
+<code>tar xvzf redis-stable.tar.gz</code> change directory and comåile with <code>make</code>
+Do not forget to run <code>make test</code> after, to install run <code>make install</code> this will just copy the binary files
+so that you can start Redis then needed. To install it as service check the file README</p>
+
+<h4>NodeJS</h4>
+
+<p>This is a Javascript runtime that is needed to run various rails applications, I added the debian repository
+in <code>/etc/apt/sources.list</code> just add this line :
+<code>add deb http://ftp.de.debian.org/debian sid main</code>
+and run the following commands <code>apt-get update</code> followed by <code>apt-get install nodejs</code></p>
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-24T17:39:39+02:00" pubdate data-updated="true">May 24<span>th</span>, 2014</time></div>
+	<div class="tags">
+
+</div>
+	
+</div>
+</article>
+
+	<div class="share">
+	<div class="addthis_toolbox addthis_default_style ">
+		
+		
+		<a class="addthis_button_tweet"></a>
+		
+		
+		
+	</div>
+	
+</div>
+
+
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2014
+
+    Christer Johansson
+
+</footer>
+	<script src="/javascripts/slash.js"></script>
+<script src="/javascripts/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+	$('.fancybox').fancybox();
+})(jQuery);
+</script> <!-- Delete or comment this line to disable Fancybox -->
+
+
+
+
+
+
+</body>
+</html>
