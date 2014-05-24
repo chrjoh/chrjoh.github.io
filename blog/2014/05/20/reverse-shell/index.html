@@ -1,0 +1,223 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Reverse shell - Lodakai's corner</title>
+	<meta name="author" content="Christer Johansson">
+
+	
+	<meta name="description" content="reverse_shell My first attempt was to write a reverse shell to be used in Mac OSX 64-bit system, one of the first obstacles was to find the header &hellip;">
+	
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="Lodakai's corner" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/favicon.png" rel="shortcut icon">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	<script async="true" src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+	
+</head>
+
+
+<body>
+	<header id="header" class="inner"><h1><a href="/">Lodakai's corner</a></h1>
+<nav id="main-nav"><ul class="main">
+	<li><a href="/">Blog</a></li>
+	<li><a href="/blog/archives">Archives</a></li>
+</ul>
+</nav>
+<nav id="mobile-nav">
+	<div class="alignleft menu">
+		<a class="button">Menu</a>
+		<div class="container"><ul class="main">
+	<li><a href="/">Blog</a></li>
+	<li><a href="/blog/archives">Archives</a></li>
+</ul>
+</div>
+	</div>
+	<div class="alignright search">
+		<a class="button"></a>
+		<div class="container">
+			<form action="https://www.google.com/search" method="get">
+				<input type="text" name="q" results="0">
+				<input type="hidden" name="q" value="site:chrjoh.github.io">
+			</form>
+		</div>
+	</div>
+</nav>
+<nav id="sub-nav" class="alignright">
+	<div class="social">
+		
+		
+		
+		<a class="twitter" href="http://twitter.com/lodakai" title="Twitter">Twitter</a>
+		
+		
+		<a class="github" href="https://github.com/chrjoh" title="GitHub">GitHub</a>
+		
+    
+		
+		
+		
+		
+		
+		<a class="rss" href="/atom.xml" title="RSS">RSS</a>
+		
+    
+	</div>
+	<form class="search" action="https://www.google.com/search" method="get">
+		<input class="alignright" type="text" name="q" results="0">
+		<input type="hidden" name="q" value="site:chrjoh.github.io">
+	</form>
+</nav>
+
+</header>
+	
+		
+	
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">Reverse Shell</h2>
+	<div class="entry-content"><h1>reverse_shell</h1>
+
+<p>My first attempt was to write a reverse shell to be used in Mac OSX 64-bit system, one of the first obstacles was to find the header file
+with the id for syscalls. After some google I found an excellent page with them
+<a href="http://www.opensource.apple.com/source/xnu/xnu-1504.3.12/bsd/kern/syscalls.master" title="syscalls">here</a>. The first steep was to write some
+c code that did the same job and from that deduce the correct order of the syscalls. This resulted in the file reverse_shell.s,
+and keep in mind that in 64-bit the calls need to be in the form, <code>0x2000061</code> for the syscall <code>61</code>. The complete code for
+<a href="https://github.com/chrjoh/shell_code/blob/master/reverse_shell/reverse_shell.s" title="reverse_shell.s">reverse_shell.s</a>.
+The <a href="http://cocoafactory.com/blog/2012/11/23/x86-64-assembly-language-tutorial-part-1/">page</a>
+have a good description of the registers and the naming it also include a tutorial to assembly programming. The first order of business
+is to change from the nasm that apple supply, go to
+<a href="http://www.nasm.us/pub/nasm/releasebuilds/2.11.02/macosx/">nasm download osx</a> and download the macox version.</p>
+
+<h4>reverse_shell, Usage:</h4>
+
+<p>  Program that call out to a service that is listening to port 4444, the ip is set to any for simplicity.
+  It is written for mac osx 64 bit</p>
+
+<p>  Start a listening server with the command: <code>nc -l 4444</code> in another folder for example your home directory</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>  nasm -g -f macho64 reverse_shell.s
+</span><span class='line'>  ld  -arch x86_64 -macosx_version_min 10.7.0 -lSystem -o reverse_shell reverse_shell.o
+</span><span class='line'>  ./reverse_shell</span></code></pre></td></tr></table></div></figure>
+
+
+<p>
+To use the code as a string payload, one need to remove the NULL bytes, these can be found by running: otool -lV reverse_shell and identify
+the mov instructions that need to be modified. The reason are the numerous NULL bytes (\x00).
+Most buffer overflow errors are related to C stdlib string functions: strcpy(), sprintf(), strcat(),
+and so on. All of these functions use the NULL symbol to indicate the end of a string.
+Therefore, a function will not read shellcode after the first occurring NULL byte.
+There are other delimiters like linefeed (0x0A), carriage return (0x0D), 0xFF, and others.</p>
+
+<h4>Binary to string</h4>
+
+<p>To convert the binary to string values that can be used as a payload use</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>  gobjdump -d ./$1|grep '[0-9a-f]:'|grep -v 'file'|cut -f2 -d:|cut -f1-6 -d' '|tr -s ' '|tr '\t' ' '|sed 's/ $//g'|sed 's/ /\\x/g' &gt; dump.txt</span></code></pre></td></tr></table></div></figure>
+
+
+<p>  By inspecting this file, we see quite few NULL(0x00) and these has to be removed
+  A simple <code>paste -d'\0' -s dump.txt</code> will combine all rows into one that can then be copied into the C file.
+  Ànother way to find bad values is:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'> gobjdump -D reverse_shell -M intel |grep 00</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p>By using the above and to find the problematic instructions and that most of them include the <code>mov</code> instruction and that the data we move
+is stored in the lowest byte of the 64-bit registers. We can use <code>mov dil, 2</code> instead of <code>mov rdi, 2</code>. Using this and that we can construct
+the syscall setuid <code>mov rax, 0x2000017</code> by using the following instructions</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'> mov r8b, 0x02               ; unix class system calls = 2
+</span><span class='line'> shl r8, 24                  ; shift left 24 to the upper order bits
+</span><span class='line'> or r8, 0x17                 ; setreuid is 0x17
+</span><span class='line'> mov rax, r8                 ; put setreuid syscall # into rax</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The last part is now to get rid of the NULL terminated string <code>db '/bin/sh', 0</code> this we do by using a simple ruby command
+(remember that osx is little endian)</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>  "/bin//sh".unpack('H*')
+</span><span class='line'>  =&gt; ["2f62696e2f2f7368"] and that give us the value to use as: 0x68732f2f6e69622f</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The result of doing these manipulations can be found in
+<a href="https://github.com/chrjoh/shell_code/blob/master/reverse_shell/reverse_shell_no_bad_values.s" title="reverse_shell_no_bad_values.s">reverse_shell_no_bad_values.s</a>
+A more simple command to use is the osx otool, <code>otool -t reverse_shell_no_bad_values.o</code> to generate the hex values we need to be able to
+test our reverse_shell code in a simple c-program,
+<a href="https://github.com/chrjoh/shell_code/blob/master/reverse_shell/reverse_shell_test.c" title="reverse_shell_test.c">reverse_shell_test.c</a>.
+Start your netcat server <code>nc -l 4444</code> then run the c code and it should call out to you can check that it works by doing some normal
+shell commands. To simplify the compilation you can use the supplied Makefile.</p>
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-20T20:22:22+02:00" pubdate data-updated="true">May 20<span>th</span>, 2014</time></div>
+	<div class="tags">
+
+</div>
+	
+</div>
+</article>
+
+	<div class="share">
+	<div class="addthis_toolbox addthis_default_style ">
+		
+		
+		<a class="addthis_button_tweet"></a>
+		
+		
+		
+	</div>
+	
+</div>
+
+
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2014
+
+    Christer Johansson
+
+</footer>
+	<script src="/javascripts/slash.js"></script>
+<script src="/javascripts/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+	$('.fancybox').fancybox();
+})(jQuery);
+</script> <!-- Delete or comment this line to disable Fancybox -->
+
+
+
+
+
+
+</body>
+</html>

