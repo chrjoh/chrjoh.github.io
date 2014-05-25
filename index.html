@@ -7,8 +7,7 @@
 	<meta name="author" content="Christer Johansson">
 
 	
-	<meta name="description" content="A quick guide to setup kali linux with some extras. As I just got myself a ultrabook and wanted a linux
-distribution to experiment with security &hellip;">
+	<meta name="description" content="bindshell This is my second try, and now the goal is to write some code to setup a listening server for OSX 64-bit system. I started with creating &hellip;">
 	
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
@@ -79,6 +78,106 @@ distribution to experiment with security &hellip;">
 		
 	
 	<div id="content" class="inner">
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2014/05/25/bind-shell/">
+		
+			Bind Shell</a>
+	</h2>
+	<div class="entry-content">
+		<h1>bindshell</h1>
+
+<p>This is my second try, and now the goal is to write some code to setup a listening server for OSX 64-bit system. I started with creating the c code to do the job
+to have someting to work from the code can be found <a href="https://github.com/chrjoh/shell_code/blob/master/bindshell/bindshell_template.c">here</a>
+Will keep this post a bit short as much of the things to do are described in my previous post,
+<a href="http://blog.lodakai.com/blog/2014/05/20/reverse-shell/">Reverse Shell</a>. Following the c code I cam up with this
+<a href="https://github.com/chrjoh/shell_code/blob/master/bindshell/bindshell.s">assembler version</a>.
+(Had some problem with the code, but @norsec0de and @TheColonial helped me to fix it, big thx to them for the help)</p>
+
+<h4>bindshell, Usage:</h4>
+
+<p>  bindshell start a listening server that you can connect to with the command: <code>nc -nv 127.0.0.1 4444</code> in another folder for example your home directory</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>  nasm -g -f macho64 bindshell.s
+</span><span class='line'>  ld  -arch x86_64 -macosx_version_min 10.7.0 -lSystem -o bindshell bindshell.o
+</span><span class='line'>  ./bindshell</span></code></pre></td></tr></table></div></figure>
+
+
+<p>
+Go to the terminal and run <code>nc -nv 127.0.0.1 4444</code> then type ls, you should now see a directory listing of the directory you started
+bindshell in.</p>
+
+<p>The next step was to convert it to something that could be used as payload, i.e remove &ldquo;bad values&rdquo;, see the reverse shell post.
+I ended up with this, not optomized with respect of length the result was
+<a href="https://github.com/chrjoh/shell_code/blob/master/bindshell/bindshell_no_bad_values.s">bindshell_no_bad_values.s</a>.
+Then I converted this to shell code values and tried the c code
+<a href="https://github.com/chrjoh/shell_code/blob/master/bindshell/bindshell_test.c">bindshell_test.c</a> there was some problems could not
+get the code to listen for incoming calls. To solve that I used the excellent command <code>dtruss ./bindshell_test</code> and by looking
+at the output I found that my socket call got the wrong values this I fixed by adding the setuid call. Example of what <code>dtruss</code>
+result in can be seen bellow:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>.
+</span><span class='line'>.
+</span><span class='line'>.
+</span><span class='line'>getaudit_addr(0x7FFF554B7C90, 0x30, 0x0)   = 0 0
+</span><span class='line'>csops(0x16821, 0x7, 0x7FFF554B7870)        = -1 Err#22
+</span><span class='line'>setuid(0x0, 0x0, 0x7FFF554B89F0)           = 0 0
+</span><span class='line'>socket(0x2, 0x1, 0x0)                      = 3 0
+</span><span class='line'>bind(0x3, 0x7FFF554B89AC, 0x10)            = 0 0
+</span><span class='line'>listen(0x3, 0x0, 0x0)                      = 0 0
+</span><span class='line'>close(0x3)                                 = 0 0
+</span><span class='line'>.
+</span><span class='line'>.</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Then that was done the c code worded as expected. For simplicity I also include a Makefile to compile the various examples. To continue
+my road into the shell code I bought
+<a href="http://www.amazon.com/gp/product/B004P5O38Q/ref=oh_d__o00_details_o00__i00?ie=UTF8&amp;psc=1">The Shellcoder&rsquo;s Handbook: Discovering and Exploiting Security Holes</a>
+Do not know if the next post will be something about wifi hacking or assembler the time will tell.</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-25T09:47:42+02:00" pubdate data-updated="true">May 25<span>th</span>, 2014</time></div>
+	<div class="tags">
+
+</div>
+	
+</div>
+</article>
 
 
     <article class="post">
